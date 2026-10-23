@@ -1,5 +1,6 @@
 import userModel from "../models/user.model.js";
 import jwt from "jsonwebtoken"
+import { sendRegistrationEmai } from "../services/email.services.js";
 
 export const userRegisterController =async (req,res)=>{
     const {email,password,name} = req.body
@@ -26,8 +27,9 @@ export const userRegisterController =async (req,res)=>{
         name:user.name,
         _id:user._id,
         email:user.email
-    },token
-);
+      },token,
+    );
+ await sendRegistrationEmai(user.email,user.name)
 }
 
 export const userLoginController = async(req,res)=>{

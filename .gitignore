@@ -1,4 +1,8 @@
-  .env
-        node_modules/
-        package-lock.json
-        package.json
+.env
+node_modules/
+package-lock.json
+package.json
+# Local environment configuration
+.env
+.env.*
+!.env.example
