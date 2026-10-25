@@ -30,4 +30,9 @@ async function authMiddleware(req,res,next){
 
 }
 
+async function authSystemMiddleware(req,res){
+    const token = req.cookies.token
+    
+}
+
 export default authMiddleware

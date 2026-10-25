@@ -45,3 +45,10 @@ export async function sendRegistrationEmai(userEmail, name) {
 
     return await sendEmail(userEmail, subject, text, html);
 }
+
+export async function sendTransaction(userEmail,name,amount,toAccount){
+  const subject = "transaction Alert";
+  const text = `Hello ${name} your transaction is successful and ${amount} is send to the ${toAccount}`
+  const html = `Hello ${name} your transaction is successful and ${amount} is send to the ${toAccount}`
+  return await sendEmail(userEmail,subject,text,html)
+}

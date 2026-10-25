@@ -1,12 +1,10 @@
 import { transactionModel } from "../models/transaction.model.js";
 import { ledgerModel } from "../models/ledger.model.js";
 import { accountModel } from "../models/account.model.js";
-import SendmailTransport from "nodemailer/lib/sendmail-transport.js";
-import { json } from "express";
+import mongoose from "mongoose";
+import { sendTransaction } from "../services/email.services.js";
 
-
-
-async function createTransaction(req,res){
+export async function createTransaction(req,res){
     const {fromAccount,toAccount,amount,idempotencyKey} = req.body
 
     if(!fromAccount || !toAccount || !amount|| !idempotencyKey){
@@ -68,7 +66,50 @@ async function createTransaction(req,res){
         })
     }
 
+    const balance = await fromUserAccount.getBalance()
     
+    if(balance<amount){
+      res.status(400).json({
+        message:`Insufficient balance.Current balance is ${balance}`
+      })
+    }
+   
+      const session = await mongoose.startSession()
+      session.startTransaction()
 
+      const transaction = await transactionModel.create([{
+        fromAccount,
+        toAccount,
+        amount,
+        idempotencyKey,
+        status:"pending"
+      }],{session})
 
+      const ledgerDebitEntry = await ledgerModel.create([{
+        account:fromAccount,
+        amount,
+        transaction:transaction._id,
+        type:"DEBIT",
+      }],{session})
+
+      const ledgerCreditEntry = await ledgerModel.create([{
+        account:toAccount,
+        amount,
+        transaction:transaction._id,
+        type:"CREDIT"
+      }],{session})
+
+      transaction.status = "completed"
+      await transaction.save({session})
+
+      await session.commitTransaction()
+      session.endSession()
+
+      await sendTransaction(req.user.email,req.user.name,amount,toAccount)
+     
+      return res.status(201).json({
+        message:"Transaction completed successfully",
+        transaction
+      })
 }
+
