@@ -22,7 +22,7 @@ transporter.verify((error, success) => {
 });
 
 
-export const sendEmail = async (to, subject, text, html) => {
+const sendEmail = async (to, subject, text, html) => {
     const info = await transporter.sendMail({
         from: `"BAS bank" <${process.env.EMAIL_USER}>`,
         to,
