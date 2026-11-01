@@ -9,4 +9,4 @@ router.post("/register",userRegisterController)
 router.post("/login",userLoginController)
 
 
-export default router;
+export default router; 

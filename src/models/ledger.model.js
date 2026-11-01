@@ -2,8 +2,9 @@ import mongoose from "mongoose";
 
 const ledgerSchema = new mongoose.Schema({
     account:{
-        type:String,
-        required:[true,"Ammount is required for creating a ledger entry"],
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"account",
+        required:[true,"Account is required for creating a ledger entry"],
         immutable:true
     },
     transaction:{

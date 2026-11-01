@@ -60,8 +60,8 @@ export async function createTransaction(req,res){
          }
     }
 
-    if(fromUserAccount.status!="active" || toUserAccount !="active"){
-        return re.status(400).json({
+    if(fromUserAccount.status!="active" || toUserAccount.status !="active"){
+        return res.status(400).json({
             message:"Both account must be active"
         })
     }
@@ -69,7 +69,7 @@ export async function createTransaction(req,res){
     const balance = await fromUserAccount.getBalance()
     
     if(balance<amount){
-      res.status(400).json({
+      return res.status(400).json({
         message:`Insufficient balance.Current balance is ${balance}`
       })
     }
@@ -110,6 +110,77 @@ export async function createTransaction(req,res){
       return res.status(201).json({
         message:"Transaction completed successfully",
         transaction
-      })
+      }) 
 }
 
+export async function createInitialFund(req,res){
+    const {toAccount,amount,idempotencyKey} = req.body
+
+    if(!toAccount || !amount || !idempotencyKey){
+        return res.status(400).json({
+            message:"toAccount , amount and idempotency are required"
+        })
+    }
+   
+     const toUserAccount = await accountModel.findOne({
+        _id:toAccount
+     })
+
+     if(!toUserAccount){
+         return res.status(400).json({
+            message:"toAccount not found"
+        })
+     }
+
+     const fromUserAccount = await accountModel.findOne({
+        user:req.user._id
+     })
+
+     if(!fromUserAccount){
+       return res.status(400).json({
+        message:"system user not find"
+       })
+     }
+
+     const session = await mongoose.startSession()
+     try {
+       session.startTransaction()
+
+       const transaction = await transactionModel.create([{
+          fromAccount:fromUserAccount._id,
+          toAccount,
+          amount,
+          idempotencyKey,
+          status:"pending",
+       }], { session })
+      
+       await ledgerModel.create([{
+          account:fromUserAccount._id,
+          amount,
+          transaction:transaction[0]._id,
+          type:"DEBIT"
+       }], { session })
+
+       await ledgerModel.create([{
+          account:toAccount,
+          amount,
+          transaction:transaction[0]._id,
+          type:"CREDIT"
+       }], { session })
+
+       transaction[0].status = "completed"
+       await transaction[0].save({session})
+
+       await session.commitTransaction()
+
+       return res.status(201).json({
+         message:"Initial fund transaction completed successfully",
+         transaction:transaction[0]
+       })
+     } catch (error) {
+       await session.abortTransaction()
+       throw error
+     } finally {
+       await session.endSession()
+     }
+}

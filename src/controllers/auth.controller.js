@@ -6,7 +6,7 @@ export const userRegisterController =async (req,res)=>{
     const {email,password,name} = req.body
     const find = await userModel.findOne({
         email:email
-    })
+    }) 
     if(find){
         return res.status(422).json({
             message:"user already exits with email",

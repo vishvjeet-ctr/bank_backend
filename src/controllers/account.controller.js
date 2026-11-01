@@ -17,4 +17,16 @@ async function createAccountController(req,res){
     })
 }
 
+export async function getAccountController(req,res){
+    const account = await accountModel.find({
+        user:req.user._id
+    })
+
+    res.status(200).json({
+account
+    })
+}
+
+
+
 export default createAccountController
