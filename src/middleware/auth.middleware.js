@@ -43,7 +43,7 @@ export async function authSystemMiddleware(req,res,next){
 
         const user = await userModel.findById(decode.userId).select("+systemUser")
 
-        if(!user || !user.systemUser){
+        if(!user.systemUser){
             return res.status(403).json({
                 message:"Forbidden access,not a system user"
 
